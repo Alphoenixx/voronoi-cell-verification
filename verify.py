@@ -39,7 +39,7 @@ CONSISTENCY TESTS.  Monte Carlo or simulation.  These are evidence, not proof.
   Lemmas 2.1/2.2   the flower inequality, and that a Voronoi flower is empty
   Remark 4.10      the two numerical constants
   Lemma 5.1        the scaling of E[Y]
-  Thm 6.1          the equal-area gadget is built for several r and its
+  Thm 6.4          the equal-area gadget is built for several r and its
                    r-O(1) area gap is measured numerically (the closed-form
                    ingredients of Section 6 are proof-grade; see above)
   Prop 2.5/Thm 3.2 simulated torus point sets: 2^d n A/log n and vol(Z_n)/A.
@@ -49,7 +49,7 @@ CONSISTENCY TESTS.  Monte Carlo or simulation.  These are evidence, not proof.
 NOT MACHINE-CHECKED.  The probabilistic arguments themselves: the conditioning
 in the lower bound of Theorem 5.5, the generalized isolation tradeoff of
 Theorem 3.2, and the geometric/posterior proof of the equal-area hidden-tile
-Theorem 6.1.  Those are hand proofs.  "ALL CHECKS PASSED" does not cover them.
+Theorem 6.4.  Those are hand proofs.  "ALL CHECKS PASSED" does not cover them.
 """
 import math
 import os
@@ -794,7 +794,7 @@ def main():
           "   [exact, sympy]",
           sp.simplify(gap - _rr) == 0,
           f"m(1+r) - N_0 = {gap} >= 0, so the provable ratio is at most 1+r")
-    # Proposition 6.8 is restricted to the construction of Theorem 6.1.
+    # Proposition 6.11 is restricted to the construction of Theorem 6.4.
     # Its arithmetic core: y = O(1/r) together with m y^r >= 1 forces
     # r log r <= (1+o(1)) log m.  Taking y = c/r and logs:
     _c = sp.Symbol("c", positive=True)
@@ -819,7 +819,7 @@ def main():
           all(0.97 < t <= 1.0 for t in tight),
           "ratios " + ", ".join(f"{t:.4f}" for t in tight))
 
-    say("\n14. Theorem 6.1   the equal-area hidden-tile construction")
+    say("\n14. Theorem 6.4   the equal-area hidden-tile construction")
     # ---- proof-grade: the closed-form ingredients of the new Section 6 ----
     _t = sp.Symbol("t", real=True)
     # g is the polar area density of Q = [-1/2,1/2]^2: half the squared boundary
