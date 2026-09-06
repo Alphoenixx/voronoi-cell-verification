@@ -24,11 +24,10 @@ arithmetic.  No floating-point value is load-bearing.
                    not atan2), and the shoelace area, all in exact rationals
   Remark 4.8       the fundamental-domain identity, in exact rationals
   Lemma 5.4        the one-hit and two-hit areas, in closed form
-  Section 6        the derivative identity behind (r/4)tan(pi/r) <= 1, and its
-                   equality case r = 4, exactly in sympy; the cell-containment
-                   radius and the fence/satellite area bounds, exactly; and the
-                   constant chain (gamma, r_0) = (1/32, 32) of Thm 6.1, including
-                   why r_0 > 4 is forced
+  Section 6        int g = 1 and 1/8 <= g <= 1/4 for the polar density of Q;
+                   the exact 8/r and 16/r neighbour separations; the satellite
+                   containment in (1+2/r)Q; and the polynomial identity giving
+                   r(1-8/r)^2/(1+2/r)^2 >= r - 20
 
 CONSISTENCY TESTS.  Monte Carlo or simulation.  These are evidence, not proof.
 
@@ -36,16 +35,17 @@ CONSISTENCY TESTS.  Monte Carlo or simulation.  These are evidence, not proof.
   Lemmas 2.1/2.2   the flower inequality, and that a Voronoi flower is empty
   Remark 4.10      the two numerical constants
   Lemma 5.1        the scaling of E[Y]
-  Thm 6.1          the gadget is built and its cell areas measured against
-                   (6.3)-(6.6)
+  Thm 6.1          the equal-area gadget is built for several r and its
+                   r-O(1) area gap is measured numerically (the closed-form
+                   ingredients of Section 6 are proof-grade; see above)
   Prop 2.5/Thm 3.2 simulated torus point sets: 2^d n A/log n and vol(Z_n)/A.
                    These converge like 1 + O(log log n/log n), so at feasible n
                    they are checked for magnitude and trend, NOT for equality.
 
 NOT MACHINE-CHECKED.  The probabilistic arguments themselves: the conditioning
-in the lower bound of Theorem 5.5, and the posterior on the unresolved gadgets
-in Theorem 6.1.  Those are hand proofs.  "ALL CHECKS PASSED" does not cover
-them.
+in the lower bound of Theorem 5.5, the generalized isolation tradeoff of
+Theorem 3.2, and the geometric/posterior proof of the equal-area hidden-tile
+Theorem 6.1.  Those are hand proofs.  "ALL CHECKS PASSED" does not cover them.
 """
 import math
 import os
@@ -478,6 +478,51 @@ def gadget_areas(s_side=5, r=6, eps=0.09, M=8):
     return out, ell, r, eps, M
 
 
+def equal_area_angles(r, grid=250000):
+    """Numerical quantiles of the square's polar area density g(theta)."""
+    import numpy as np
+    th = np.linspace(0.0, 2.0*math.pi, grid + 1)
+    gv = 1.0/(8.0*np.maximum(np.cos(th)**2, np.sin(th)**2))
+    dth = th[1] - th[0]
+    cdf = np.zeros(grid + 1)
+    cdf[1:] = np.cumsum((gv[:-1] + gv[1:]) * (dth/2.0))
+    cdf /= cdf[-1]
+    return np.interp(np.arange(r)/r, cdf, th)
+
+
+def equal_area_gadget_areas(s_side=5, r=21):
+    """Periodic Voronoi areas for the fence-free Section 6 construction."""
+    import numpy as np
+    from scipy.spatial import Voronoi
+    ell = 1.0/s_side
+    ang = equal_area_angles(r)
+    J = (s_side//2, s_side//2)
+    sites, kind = [], []
+    for i in range(s_side):
+        for j in range(s_side):
+            z = np.array(((i+0.5)*ell, (j+0.5)*ell))
+            sites.append(z); kind.append("J" if (i,j) == J else "centre")
+            if (i,j) != J:
+                for a in ang:
+                    sites.append((z + (ell/r)*np.array((math.cos(a), math.sin(a)))) % 1.0)
+                    kind.append("sat")
+    P = np.asarray(sites, dtype=float)
+    shifts = np.array([(i,j) for i in (-1,0,1) for j in (-1,0,1)], dtype=float)
+    big = np.concatenate([P + sh for sh in shifts])
+    base = 4*len(P)
+    vor = Voronoi(big)
+    out = {"J": [], "centre": [], "sat": []}
+    for k in range(len(P)):
+        reg = vor.regions[vor.point_region[base+k]]
+        if not reg or -1 in reg:
+            continue
+        v = vor.vertices[reg]
+        ar = 0.5*abs(np.dot(v[:,0], np.roll(v[:,1], 1))
+                     - np.dot(v[:,1], np.roll(v[:,0], 1)))
+        out[kind[k]].append(ar)
+    return out, ell, ang
+
+
 # ============================================================================
 def main():
     from multiprocessing import Pool
@@ -717,93 +762,76 @@ def main():
     check("empty flower: no site in int F(V(p)-p)   [5 x 60 sites]",
           viol == 0, f"{viol} violations")
 
-    say("\n13. Theorem 6.1   the gadget, built and measured")
-    # The note now proves (r/4)tan(pi/r) <= 1 for all real r >= 4 analytically:
-    # with u = pi/r in (0,pi/4], (r/4)tan(pi/r) = (pi/4)(tan u)/u, and (tan u)/u
-    # increases on (0,pi/2) because its derivative is (2u - sin 2u)/(2u^2cos^2u)
-    # and sin x <= x.  Certified below is the one symbolic step; the finite
-    # sweep that follows is a consistency test, not the proof.
-    _u = sp.Symbol("u", positive=True)
-    _d = sp.simplify(sp.diff(sp.tan(_u)/_u, _u)
-                     - (2*_u - sp.sin(2*_u))/(2*_u**2*sp.cos(_u)**2))
-    check("d/du (tan u / u) = (2u - sin 2u) / (2 u^2 cos^2 u)   [exact, sympy]",
-          _d == 0, f"difference simplifies to {_d}")
-    check("(r/4) tan(pi/r) = 1 at r = 4, so r >= 4 is sharp   [exact, sympy]",
-          sp.simplify(sp.Rational(4, 4)*sp.tan(sp.pi/4) - 1) == 0,
-          "equality case, not a convenience")
-    bad_r = [r for r in range(4, 2001)
-             if (r/4)*math.tan(math.pi/r) > 1+1e-12]
-    check("(r/4) tan(pi/r) <= 1 for 4 <= r <= 2000   [numerical sweep]",
-          not bad_r, f"r=4 gives {(4/4)*math.tan(math.pi/4):.6f}")
-    # Theorem 6.1 also needs every cell to lie in a ball of radius 0.52 l about
-    # its site (M >= 4); this is what bounds fence and satellite cells in the
-    # direction the bisectors do not constrain.
-    # These three are rational inequalities once the radical is squared, so
-    # decide them in Fractions rather than in math.sqrt.
-    _rho2 = (1 + F(1, 4**2)) / 4          # (rho/l)^2 at M = 4, exact
-    check("containment (1+1/M^2)/4 <= (13/25)^2 at M = 4   [exact, rational]",
-          _rho2 <= F(13, 25)**2, f"{_rho2} <= {F(13,25)**2}")
-    check("fence cell (26/25)^2 <= 2, i.e. eta*2(13/25)l <= sqrt2 l^2/M"
-          "   [exact, rational]",
-          F(26, 25)**2 <= 2, f"{F(26,25)**2} <= 2")
-    check("satellite ball 13/25 + 1/10 <= 1 for eps < 1/10   [exact, rational]",
-          F(13, 25) + F(1, 10) <= 1, f"{F(13,25)+F(1,10)} <= 1")
-    # Theorem 6.1 needs c = gamma*r >= 1, since A is the LARGEST cell and no
-    # site is c-competitive for c < 1.  With gamma <= a_0/2pi forced by
-    # r >= 2 pi c / a_0, that means r >= r_0 >= 1/gamma -- the hypothesis
-    # r >= 4 was too weak.  Certify the admissible pair (gamma, r_0)=(1/32, 32).
-    # a_0/2pi and 2pi/a_0 involve pi, so decide them in VERIFIED interval
-    # arithmetic; comparing floats here would not be a proof.
-    from mpmath import iv, mpf as _mpf
-    iv.dps = 50
-    a0_iv = (4*iv.sqrt(2) - iv.mpf(5)) / 3
-    gmax_iv = a0_iv / (2 * iv.pi)             # the largest admissible gamma
-    a0_ = float((4*sp.sqrt(2) - 5)/3)
-    gam, r0 = F(1, 32), 32
-    c_ = gam * r0                             # exactly 1
-    check("Thm 6.1  gamma = 1/32 <= a_0/2pi   [verified interval arithmetic]",
-          _mpf(gmax_iv.a) > float(gam),
-          f"1/32 = 0.031250 < {float(_mpf(gmax_iv.a)):.9f}")
-    check("Thm 6.1  c = gamma*r_0 >= 1  at r_0 = 32   [exact, rational]",
-          c_ >= 1, f"c = {c_}")
-    check("Thm 6.1  r_0 = 32 >= 2 pi c / a_0   [verified interval arithmetic]",
-          _mpf((2*iv.pi*iv.mpf(int(c_))/a0_iv).b) < r0,
-          f"2 pi/a_0 = {float(_mpf((2*iv.pi/a0_iv).b)):.6f} < 32")
-    check("Thm 6.1  r = 4 gives c < 1 for every admissible gamma, so r_0 > 4"
-          "   [verified interval arithmetic]",
-          _mpf((4*gmax_iv).b) < 1,
-          f"best possible c at r=4 is {float(_mpf((4*gmax_iv).b)):.6f} < 1")
-    ar_, ell, r, eps, M = gadget_areas()
-    a0 = (4*math.sqrt(2)-5)/3
-    AJ = max(ar_["J"])
-    check("(6.3)  area(V(z_J)) >= a_0 l^2", AJ >= a0*ell*ell - 1e-12,
-          f"{AJ/ell**2:.4f} l^2  vs  a_0 = {a0:.4f}")
-    mc, ms, mfen = max(ar_["centre"]), max(ar_["sat"]), max(ar_["fence"])
-    check("(6.4)  area(V(z_i)) <= eps^2 l^2, i != J",
-          mc <= eps*eps*ell*ell + 1e-12, f"{mc/ell**2:.5f} vs {eps**2:.5f}")
-    check("(6.5)  satellite cells <= pi l^2 / r",
-          ms <= math.pi*ell*ell/r + 1e-12,
-          f"{ms/ell**2:.5f} vs {math.pi/r:.5f}")
-    check("(6.6)  fence cells <= sqrt(2) l^2 / M",
-          mfen <= math.sqrt(2)*ell*ell/M + 1e-12,
-          f"{mfen/ell**2:.5f} vs {math.sqrt(2)/M:.5f}")
-    oth = max(mc, ms, mfen)
-    check("z_J is the unique competitive site", AJ/oth > 3.0,
-          f"area ratio {AJ/oth:.2f}")
-    # Rebuild at a parameter point where the theorem actually applies:
-    # r = r_0 = 32, c = 1, eps = 0.09 < 1/10, M = 13 >= max(4, 2 sqrt2 c/a_0).
-    Mr = max(4, math.ceil(2*math.sqrt(2)*c_/a0_))
-    a2, ell2, r2, eps2, M2 = gadget_areas(s_side=5, r=r0, eps=0.09, M=Mr)
-    AJ2 = max(a2["J"])
-    o2 = max(max(a2["centre"]), max(a2["sat"]), max(a2["fence"]))
-    check(f"gadget rebuilt at r = r_0 = {r0}, M = {Mr}: (6.3) still holds",
-          AJ2 >= a0_*ell2*ell2 - 1e-12, f"{AJ2/ell2**2:.4f} l^2 vs a_0 = {a0_:.4f}")
-    check(f"at r = r_0 every other cell is below A/c, c = {c_:.2f}",
-          o2 < AJ2/c_, f"largest competitor {o2/ell2**2:.5f} l^2 "
-          f"vs A/c = {AJ2/c_/ell2**2:.5f} l^2")
+    say("\n13. Theorem 6.1   the equal-area hidden-tile construction")
+    # ---- proof-grade: the closed-form ingredients of the new Section 6 ----
+    _t = sp.Symbol("t", real=True)
+    # g is the polar area density of Q = [-1/2,1/2]^2: half the squared boundary
+    # radius, rho(theta) = 1/(2 max(|cos|,|sin|)).
+    g_sector = 1/(8*sp.cos(_t)**2)                 # valid on (-pi/4, pi/4)
+    tot = sp.simplify(8*sp.integrate(g_sector, (_t, 0, sp.pi/4)))
+    check("(6.2)  int_0^{2pi} g = 1, i.e. g is a probability density on Q"
+          "   [exact, sympy]", tot == 1, f"8 * int_0^(pi/4) sec^2/8 = {tot}")
+    check("(6.2)  g(0) = 1/8 and g(pi/4) = 1/4, so 1/8 <= g <= 1/4"
+          "   [exact, sympy]",
+          sp.simplify(g_sector.subs(_t, 0) - sp.Rational(1, 8)) == 0
+          and sp.simplify(1/(8*sp.Rational(1, 2)) - sp.Rational(1, 4)) == 0,
+          "max(cos^2,sin^2) ranges over [1/2,1]")
+    # Neighbour separation on (1-8/r)Q: ||v||^2 - 2<x,v> with |x_i| <= (1-8/r)/2.
+    _r = sp.Symbol("r", positive=True)
+    ax_sep = sp.simplify(1 - 2*((1 - 8/_r)/2))          # axial neighbours
+    dg_sep = sp.simplify(2 - 2*2*((1 - 8/_r)/2))        # diagonal neighbours
+    check("(6.6)  axial separation is exactly 8/r   [exact, sympy]",
+          sp.simplify(ax_sep - 8/_r) == 0, f"{ax_sep}")
+    check("(6.6)  diagonal separation is exactly 16/r   [exact, sympy]",
+          sp.simplify(dg_sep - 16/_r) == 0, f"{dg_sep}")
+    # The perturbation |2<v-x,h>| + ||h||^2 <= 2(3 sqrt2/2)/r + 1/r^2, and
+    # 3 sqrt2 < 6 < 8, so it never eats the 8/r separation.
+    check("(6.6)  perturbation bound 3*sqrt2 <= 6 < 8   [exact, rational]",
+          (3*3)*2 <= 6**2 and 6 < 8, "18 = (3 sqrt2)^2 <= 36")
+    # Satellite containment: 1/2 + sqrt2/(2r) + 1/r^2 <= 1/2 + 1/r iff
+    # sqrt2/2 + 1/r <= 1, i.e. 1/2 <= (1 - 1/r)^2; true from r = 4 on.
+    check("(6.7)  satellite cell lies in (1+2/r)Q for r >= 4   [exact, rational]",
+          F(1, 2) <= (1 - F(1, 4))**2, f"1/2 <= {(1-F(1,4))**2}")
+    # The gap, with the two explicit square factors: the ratio
+    # r(1-8/r)^2/(1+2/r)^2 = r(r-8)^2/(r+2)^2 is at least r-20 for every r>0,
+    # since the difference is the polynomial 140r + 80.
+    gap_poly = sp.expand(_r*(_r - 8)**2 - (_r - 20)*(_r + 2)**2)
+    check("(6.9)  r(1-8/r)^2/(1+2/r)^2 >= r - 20 for all r > 0   [exact, sympy]",
+          sp.simplify(gap_poly - (140*_r + 80)) == 0,
+          f"difference is {sp.factor(gap_poly)}, positive for r > 0")
+
+    # ---- consistency: build the construction and measure the gap ---------
+    note("")
+    note("The remaining Section 6 checks are numerical: the construction is")
+    note("built independently and its r-O(1) gap measured.  [consistency]")
+    ratios = []
+    deficits = []
+    for rr in (21, 41, 81):
+        ar_, ell, ang = equal_area_gadget_areas(s_side=5, r=rr)
+        AJ = max(ar_["J"])
+        bad = max(max(ar_["centre"]), max(ar_["sat"]))
+        rat = AJ/bad
+        ratios.append(rat)
+        deficits.append(rr-rat)
+        # The explicit inner-square certificate in (6.6).
+        check(f"r={rr}: area(V(z_J)) >= (1-8/r)^2 l^2",
+              AJ >= (1-8/rr)**2 * ell**2 - 2e-10,
+              f"{AJ/ell**2:.6f} vs {(1-8/rr)**2:.6f}")
+        note(f"r={rr:3d}   A/l^2={AJ/ell**2:.6f}   maxbad/l^2={bad/ell**2:.6f}"
+             f"   A/maxbad={rat:.6f}   r-ratio={rr-rat:.6f}")
+    check("area gap grows linearly with r   [consistency]",
+          ratios[0] < ratios[1] < ratios[2])
+    check("r - A/maxbad stays bounded on the tested sequence   [consistency]",
+          max(deficits) < 8.0,
+          "deficits " + ", ".join(f"{x:.3f}" for x in deficits))
+    check("measured deficits are below the proved constant 20   [consistency]",
+          max(deficits) < 20.0,
+          f"max deficit {max(deficits):.3f} < 20 from (6.9)")
 
     say("\n14. Prop 2.5 / Thm 3.2   torus simulation   [consistency, not proof]")
-    note("a_n = 4 log log n exceeds log n until n ~ 5504, so w_n > 0 and hence")
+    note("This simulation uses the simple specialization a_n = 4 log log n from the")
+    note("earlier presentation of Theorem 3.2; the updated theorem allows general a_n,s_n.")
+    note("Here a_n exceeds log n until n ~ 5504, so w_n > 0 and hence")
     note("r_n is defined only above that; and 4 log log n / log n is still 0.94")
     note("at n = 16000, so vol(Z_n)/A is far from 1 at any simulable n.  These")
     note("are order-of-magnitude and trend checks only.")

@@ -23,7 +23,7 @@ Roughly 3 minutes. The script uses half the logical cores; override with
 `VERIFY_PROCS=n`. Output is flushed line by line, so it can be watched as it
 runs. Exit status is non-zero if any check fails.
 
-Current run: **62 checks, 0 failures**, about 3 minutes on 8 processes.
+Current run: **58 checks, 0 failures**, about 2½ minutes on 8 processes.
 
 ## What is proved, and what is only tested
 
@@ -39,7 +39,7 @@ group.
 | Prop 4.9 | both `f(q)` and `∇f(q)` enclosed in verified interval arithmetic at all 64 probes, so the supporting halfplane is valid for the *true* gradient; outward rounding to rationals; polygon intersection, the cyclic **order** of the vertices (sign tests on `Fraction`s, not `atan2`, then certified convex-CCW), and the shoelace area, all in exact rationals |
 | Remark 4.8 | the fundamental-domain identity, in exact rationals |
 | Lemma 5.4 | the one-hit and two-hit areas, in closed form |
-| Section 6 | the derivative identity behind `(r/4)tan(π/r) ≤ 1` and its equality case `r = 4`, exactly in `sympy`; the cell-containment radius and the fence and satellite area bounds as rational inequalities; and the constant chain `(γ, r₀) = (1/32, 32)` of Thm 6.1 — the three bounds involving π in verified interval arithmetic — including why `r₀ > 4` is forced |
+| Section 6 | `∫₀^{2π} g = 1` and `1/8 ≤ g ≤ 1/4` for the polar area density `g(θ) = 1/(8max(cos²θ, sin²θ))` of the tile, in `sympy`; the exact `8/r` and `16/r` neighbour separations; the satellite containment in `(1+2/r)Q` for `r ≥ 4`; and the polynomial identity `r(r−8)² − (r−20)(r+2)² = 140r + 80`, which gives the gap `r(1−8/r)²/(1+2/r)² ≥ r − 20` for every `r > 0` |
 
 **Consistency tests.** Monte Carlo or simulation. These are evidence, not proof,
 and are labelled as such in the output.
@@ -48,7 +48,7 @@ and are labelled as such in the output.
 - Lemmas 2.1 / 2.2 — the flower inequality, and that a Voronoi flower is empty
 - Remark 4.10 — the two numerical constants
 - Lemma 5.1 — the scaling of `E[Y]`
-- Thm 6.1 — the gadget is built and its cell areas measured against (6.3)–(6.6), at `r = 6` and again at the smallest admissible `r = r₀ = 32`
+- Thm 6.1 — the equal-area hidden-tile construction is built independently at `r = 21, 41, 81` and its `r − O(1)` area gap measured; the measured deficits are `4.79, 5.24, 5.47`, bounded and well inside the proved constant `20`
 - Prop 2.5 / Thm 3.2 — simulated torus point sets
 
 On that last row: `2^d n A / log n → 1` carries a correction of order
