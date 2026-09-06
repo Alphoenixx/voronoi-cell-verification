@@ -466,7 +466,7 @@ def main():
     check("formula (4.1) reproduces the raw definition at 13 points",
           worst < 1e-6, f"max |A-B| = {worst:.2e}")
 
-    say("\n2. Theorem 4.5   psi >= 9/50   [exact]")
+    say("\n2. Theorem 4.5   P[f >= 9/50] >= 9/50   [exact]")
     v = f_exact(sp.Rational(1, 5), sp.Rational(1, 2))
     check("f(1/5,1/2) = 22*sqrt(5)/25 - 134/75",
           sp.simplify(v - (22*sp.sqrt(5)/25 - sp.Rational(134, 75))) == 0)
@@ -478,7 +478,7 @@ def main():
     check("area conv(G q) = 9/50", ar == F(9, 50), f"{nv}-gon")
     check("9/50 > 1/6  (settles Remark 3.3 of [HP])", F(9, 50) > F(1, 6))
 
-    say("\n3. Theorem 4.6   psi >= 193/1000   [exact]")
+    say("\n3. Theorem 4.6   P[f >= 193/1000] >= 193/1000   [exact]")
     for i, (ok, val) in enumerate(pool.map(
             w_gt, [(_fr(r)[0], _fr(r)[1], (193, 1000)) for r in R5]), 1):
         check(f"f(r{i}) > 193/1000", ok, f"= {val}")
