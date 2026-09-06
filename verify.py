@@ -24,7 +24,11 @@ arithmetic.  No floating-point value is load-bearing.
                    not atan2), and the shoelace area, all in exact rationals
   Remark 4.8       the fundamental-domain identity, in exact rationals
   Lemma 5.4        the one-hit and two-hit areas, in closed form
-  Section 6        int g = 1 and 1/8 <= g <= 1/4 for the polar density of Q;
+  Thm 5.6          the two-cone expansion 1-2(1-a)^s+(1-2a)^s = s(s-1)a^2 +
+                   O(s^3a^3) behind the universal reliability barrier
+  Section 6        the area-transfer counting step and the stationary point of
+                   y + e^{-L} y^{-r} behind the architecture bound;
+                   int g = 1 and 1/8 <= g <= 1/4 for the polar density of Q;
                    the exact 8/r and 16/r neighbour separations; the satellite
                    containment in (1+2/r)Q; and the polynomial identity giving
                    r(1-8/r)^2/(1+2/r)^2 >= r - 20
@@ -762,7 +766,49 @@ def main():
     check("empty flower: no site in int F(V(p)-p)   [5 x 60 sites]",
           viol == 0, f"{viol} violations")
 
-    say("\n13. Theorem 6.1   the equal-area hidden-tile construction")
+    say("\n13. Theorem 5.6 and Section 6 obstructions   [closed forms]")
+    _a, _s, _L, _rr = sp.symbols("a s L r", positive=True)
+    # (5.5) the two-cone probability, expanded exactly.
+    two_cone = 1 - 2*(1 - _a)**_s + (1 - 2*_a)**_s
+    coeff2 = sp.simplify(sp.series(two_cone, _a, 0, 3).removeO().coeff(_a, 2))
+    check("(5.5)  1 - 2(1-a)^s + (1-2a)^s has a^2 coefficient s(s-1)"
+          "   [exact, sympy]",
+          sp.simplify(coeff2 - _s*(_s - 1)) == 0, f"coefficient = {sp.factor(coeff2)}")
+    check("(5.5)  the a^1 coefficient vanishes, so the pair term leads"
+          "   [exact, sympy]",
+          sp.simplify(sp.series(two_cone, _a, 0, 2).removeO().coeff(_a, 1)) == 0,
+          "no linear term: a single hit is not enough")
+    # (6.13) the area-transfer counting step.
+    check("(6.13)  v - v/r <= |Q\\P| v/r  implies  |Q\\P| >= r-1"
+          "   [exact, sympy]",
+          sp.simplify(sp.solve(sp.Eq(1 - 1/_rr, sp.Symbol("N", positive=True)/_rr),
+                               sp.Symbol("N", positive=True))[0] - (_rr - 1)) == 0,
+          "the bound is tight as an identity")
+    # (6.14) the stationary point of y + e^{-L} y^{-r}.
+    _y = sp.Symbol("y", positive=True)
+    stat = sp.solve(sp.diff(_y + sp.exp(-_L)*_y**(-_rr), _y), _y)
+    ok = any(sp.simplify(z - (_rr*sp.exp(-_L))**(1/(_rr + 1))) == 0 for z in stat)
+    check("(6.14)  argmin of y + e^{-L} y^{-r} is (r e^{-L})^{1/(r+1)}"
+          "   [exact, sympy]", ok, f"{stat}")
+    # and the resulting Theta(log L / L) floor, swept numerically
+    def arch(L):
+        best = float("inf")
+        for r in range(2, 4000):
+            yv = (r*math.exp(-L))**(1.0/(r + 1))
+            if yv >= 1:
+                continue
+            best = min(best, yv + math.exp(-L)*yv**(-r) + 1.0/r)
+        return best
+    rows = [(L, arch(L), math.log(L)/L) for L in (20.0, 40.0, 80.0)]
+    note("   L      min(y + e^-L y^-r + 1/r)     log L / L      ratio")
+    for L, v, ref in rows:
+        note(f"  {L:5.0f}      {v:.6f}                 {ref:.6f}     {v/ref:.3f}")
+    rat = [v/ref for (_L2, v, ref) in rows]
+    check("(6.14)  the architecture floor is Theta(log L / L)   [numerical]",
+          max(rat)/min(rat) < 1.6 and min(rat) > 0.5,
+          "ratios " + ", ".join(f"{x:.3f}" for x in rat))
+
+    say("\n14. Theorem 6.1   the equal-area hidden-tile construction")
     # ---- proof-grade: the closed-form ingredients of the new Section 6 ----
     _t = sp.Symbol("t", real=True)
     # g is the polar area density of Q = [-1/2,1/2]^2: half the squared boundary
@@ -828,7 +874,7 @@ def main():
           max(deficits) < 20.0,
           f"max deficit {max(deficits):.3f} < 20 from (6.9)")
 
-    say("\n14. Prop 2.5 / Thm 3.2   torus simulation   [consistency, not proof]")
+    say("\n15. Prop 2.5 / Thm 3.2   torus simulation   [consistency, not proof]")
     note("This simulation uses the simple specialization a_n = 4 log log n from the")
     note("earlier presentation of Theorem 3.2; the updated theorem allows general a_n,s_n.")
     note("Here a_n exceeds log n until n ~ 5504, so w_n > 0 and hence")
