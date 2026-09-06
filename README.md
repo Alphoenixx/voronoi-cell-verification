@@ -36,10 +36,10 @@ group.
 | Lemma 4.4 | the closed form for `f`, cross-checked against the raw definition of `D_p` by ray shooting, using no formula from the paper |
 | Thms 4.5 / 4.6 / 4.7 | all eleven inequalities, decided exactly in `sympy` |
 | Cor 4.3 | `f(1/2,1/2) = 4√2/3 − 5/3`, exactly |
-| Prop 4.9 | both `f(q)` and `∇f(q)` enclosed in verified interval arithmetic at all 64 probes, so the supporting halfplane is valid for the *true* gradient; outward rounding to rationals; polygon intersection and area in exact rationals |
+| Prop 4.9 | both `f(q)` and `∇f(q)` enclosed in verified interval arithmetic at all 64 probes, so the supporting halfplane is valid for the *true* gradient; outward rounding to rationals; polygon intersection, the cyclic **order** of the vertices (sign tests on `Fraction`s, not `atan2`, then certified convex-CCW), and the shoelace area, all in exact rationals |
 | Remark 4.8 | the fundamental-domain identity, in exact rationals |
 | Lemma 5.4 | the one-hit and two-hit areas, in closed form |
-| Section 6 | the derivative identity behind `(r/4)tan(π/r) ≤ 1` and its equality case `r = 4`, exactly in `sympy`; the cell-containment radius and the fence and satellite area bounds; and the constant chain `(γ, r₀) = (1/32, 32)` of Thm 6.1, including why `r₀ > 4` is forced |
+| Section 6 | the derivative identity behind `(r/4)tan(π/r) ≤ 1` and its equality case `r = 4`, exactly in `sympy`; the cell-containment radius and the fence and satellite area bounds as rational inequalities; and the constant chain `(γ, r₀) = (1/32, 32)` of Thm 6.1 — the three bounds involving π in verified interval arithmetic — including why `r₀ > 4` is forced |
 
 **Consistency tests.** Monte Carlo or simulation. These are evidence, not proof,
 and are labelled as such in the output.

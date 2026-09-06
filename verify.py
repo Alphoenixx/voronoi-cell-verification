@@ -19,8 +19,9 @@ arithmetic.  No floating-point value is load-bearing.
   Thm 4.5/4.6/4.7  all eleven inequalities, decided exactly in sympy
   Cor 4.3          f(1/2,1/2) = 4 sqrt2/3 - 5/3, exactly
   Prop 4.9         f(q) < alpha AND grad f(q) at all 64 probes, in verified
-                   interval arithmetic; outward rounding; polygon intersection
-                   and area in exact rationals
+                   interval arithmetic; outward rounding; polygon intersection,
+                   the cyclic ORDER of the vertices (sign tests on Fractions,
+                   not atan2), and the shoelace area, all in exact rationals
   Remark 4.8       the fundamental-domain identity, in exact rationals
   Lemma 5.4        the one-hit and two-hit areas, in closed form
   Section 6        the derivative identity behind (r/4)tan(pi/r) <= 1, and its
@@ -52,6 +53,7 @@ import random
 import sys
 import time
 from fractions import Fraction as F
+from functools import cmp_to_key
 
 import sympy as sp
 
@@ -364,7 +366,32 @@ def polygon_area(hps):
     pts = sorted(set(pts))
     cx = sum(p[0] for p in pts)/len(pts)
     cy = sum(p[1] for p in pts)/len(pts)
-    pts.sort(key=lambda p: math.atan2(float(p[1]-cy), float(p[0]-cx)))
+
+    # Sort the vertices counter-clockwise about (cx,cy) using ONLY sign tests
+    # on Fractions.  An atan2 sort would put a floating-point comparison in
+    # charge of the cyclic order, and the shoelace value depends on that order.
+    def _half(p):
+        dx, dy = p[0] - cx, p[1] - cy
+        return 0 if (dy > 0 or (dy == 0 and dx > 0)) else 1
+
+    def _cmp(p, q):
+        hp, hq = _half(p), _half(q)
+        if hp != hq:
+            return -1 if hp < hq else 1
+        cr = (p[0]-cx)*(q[1]-cy) - (p[1]-cy)*(q[0]-cx)
+        return -1 if cr > 0 else (1 if cr < 0 else 0)
+
+    pts.sort(key=cmp_to_key(_cmp))
+
+    # Certify the order exactly: for a convex polygon listed counter-clockwise
+    # every consecutive triple turns left (cross >= 0, = 0 only if collinear).
+    k = len(pts)
+    for i in range(k):
+        ax, ay = pts[i]
+        bx, by = pts[(i+1) % k]
+        ex, ey = pts[(i+2) % k]
+        if (bx-ax)*(ey-ay) - (by-ay)*(ex-ax) < 0:
+            raise AssertionError("polygon_area: vertices not convex-CCW")
     return abs(signed(pts))
 
 
@@ -711,31 +738,41 @@ def main():
     # Theorem 6.1 also needs every cell to lie in a ball of radius 0.52 l about
     # its site (M >= 4); this is what bounds fence and satellite cells in the
     # direction the bisectors do not constrain.
-    _M = 4
-    _rho = math.sqrt(1.0 + 1.0/_M**2)/2
-    check("containment radius sqrt(l^2+eta^2)/2 <= 0.52 l for M >= 4   [exact]",
-          _rho <= 0.52, f"{_rho:.6f} l at M=4, decreasing in M")
-    check("fence cell area eta * 2(0.52 l) <= sqrt(2) l^2 / M   [exact]",
-          2*_rho <= math.sqrt(2), f"1.04 <= {math.sqrt(2):.6f}")
-    check("satellite ball 0.52 l + eps l <= l for eps < 1/10   [exact]",
-          _rho + 0.1 <= 1.0, f"{_rho+0.1:.4f} <= 1")
+    # These three are rational inequalities once the radical is squared, so
+    # decide them in Fractions rather than in math.sqrt.
+    _rho2 = (1 + F(1, 4**2)) / 4          # (rho/l)^2 at M = 4, exact
+    check("containment (1+1/M^2)/4 <= (13/25)^2 at M = 4   [exact, rational]",
+          _rho2 <= F(13, 25)**2, f"{_rho2} <= {F(13,25)**2}")
+    check("fence cell (26/25)^2 <= 2, i.e. eta*2(13/25)l <= sqrt2 l^2/M"
+          "   [exact, rational]",
+          F(26, 25)**2 <= 2, f"{F(26,25)**2} <= 2")
+    check("satellite ball 13/25 + 1/10 <= 1 for eps < 1/10   [exact, rational]",
+          F(13, 25) + F(1, 10) <= 1, f"{F(13,25)+F(1,10)} <= 1")
     # Theorem 6.1 needs c = gamma*r >= 1, since A is the LARGEST cell and no
     # site is c-competitive for c < 1.  With gamma <= a_0/2pi forced by
     # r >= 2 pi c / a_0, that means r >= r_0 >= 1/gamma -- the hypothesis
     # r >= 4 was too weak.  Certify the admissible pair (gamma, r_0)=(1/32, 32).
+    # a_0/2pi and 2pi/a_0 involve pi, so decide them in VERIFIED interval
+    # arithmetic; comparing floats here would not be a proof.
+    from mpmath import iv, mpf as _mpf
+    iv.dps = 50
+    a0_iv = (4*iv.sqrt(2) - iv.mpf(5)) / 3
+    gmax_iv = a0_iv / (2 * iv.pi)             # the largest admissible gamma
     a0_ = float((4*sp.sqrt(2) - 5)/3)
-    gam, r0 = sp.Rational(1, 32), 32
-    c_ = float(gam)*r0
-    check("Thm 6.1  gamma <= a_0/2pi  (forced by r >= 2 pi c / a_0)",
-          float(gam) <= a0_/(2*math.pi),
-          f"1/32 = {float(gam):.6f} <= {a0_/(2*math.pi):.6f}")
-    check("Thm 6.1  c = gamma*r_0 >= 1  at r_0 = 32   [the repaired hypothesis]",
-          c_ >= 1.0, f"c = {c_:.4f}")
-    check("Thm 6.1  r_0 >= 2 pi c / a_0", r0 >= 2*math.pi*c_/a0_,
-          f"32 >= {2*math.pi*c_/a0_:.4f}")
-    check("Thm 6.1  r = 4 would give c < 1, so r_0 > 4 is necessary",
-          float(gam)*4 < 1.0 and a0_/(2*math.pi)*4 < 1.0,
-          f"best possible c at r=4 is {a0_/(2*math.pi)*4:.4f} < 1")
+    gam, r0 = F(1, 32), 32
+    c_ = gam * r0                             # exactly 1
+    check("Thm 6.1  gamma = 1/32 <= a_0/2pi   [verified interval arithmetic]",
+          _mpf(gmax_iv.a) > float(gam),
+          f"1/32 = 0.031250 < {float(_mpf(gmax_iv.a)):.9f}")
+    check("Thm 6.1  c = gamma*r_0 >= 1  at r_0 = 32   [exact, rational]",
+          c_ >= 1, f"c = {c_}")
+    check("Thm 6.1  r_0 = 32 >= 2 pi c / a_0   [verified interval arithmetic]",
+          _mpf((2*iv.pi*iv.mpf(int(c_))/a0_iv).b) < r0,
+          f"2 pi/a_0 = {float(_mpf((2*iv.pi/a0_iv).b)):.6f} < 32")
+    check("Thm 6.1  r = 4 gives c < 1 for every admissible gamma, so r_0 > 4"
+          "   [verified interval arithmetic]",
+          _mpf((4*gmax_iv).b) < 1,
+          f"best possible c at r=4 is {float(_mpf((4*gmax_iv).b)):.6f} < 1")
     ar_, ell, r, eps, M = gadget_areas()
     a0 = (4*math.sqrt(2)-5)/3
     AJ = max(ar_["J"])
