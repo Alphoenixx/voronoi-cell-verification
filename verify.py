@@ -26,8 +26,8 @@ arithmetic.  No floating-point value is load-bearing.
   Lemma 5.4        the one-hit and two-hit areas, in closed form
   Thm 5.6          the two-cone expansion 1-2(1-a)^s+(1-2a)^s = s(s-1)a^2 +
                    O(s^3a^3) behind the universal reliability barrier
-  Section 6        the area-transfer counting step and the stationary point of
-                   y + e^{-L} y^{-r} behind the architecture bound;
+  Section 6        the area-transfer counting step, and the arithmetic
+                   r log r <= (1+o(1)) log m behind the architecture bound;
                    int g = 1 and 1/8 <= g <= 1/4 for the polar density of Q;
                    the exact 8/r and 16/r neighbour separations; the satellite
                    containment in (1+2/r)Q; and the polynomial identity giving
@@ -784,29 +784,30 @@ def main():
           sp.simplify(sp.solve(sp.Eq(1 - 1/_rr, sp.Symbol("N", positive=True)/_rr),
                                sp.Symbol("N", positive=True))[0] - (_rr - 1)) == 0,
           "the bound is tight as an identity")
-    # (6.14) the stationary point of y + e^{-L} y^{-r}.
-    _y = sp.Symbol("y", positive=True)
-    stat = sp.solve(sp.diff(_y + sp.exp(-_L)*_y**(-_rr), _y), _y)
-    ok = any(sp.simplify(z - (_rr*sp.exp(-_L))**(1/(_rr + 1))) == 0 for z in stat)
-    check("(6.14)  argmin of y + e^{-L} y^{-r} is (r e^{-L})^{1/(r+1)}"
-          "   [exact, sympy]", ok, f"{stat}")
-    # and the resulting Theta(log L / L) floor, swept numerically
-    def arch(L):
-        best = float("inf")
-        for r in range(2, 4000):
-            yv = (r*math.exp(-L))**(1.0/(r + 1))
-            if yv >= 1:
-                continue
-            best = min(best, yv + math.exp(-L)*yv**(-r) + 1.0/r)
-        return best
-    rows = [(L, arch(L), math.log(L)/L) for L in (20.0, 40.0, 80.0)]
-    note("   L      min(y + e^-L y^-r + 1/r)     log L / L      ratio")
-    for L, v, ref in rows:
-        note(f"  {L:5.0f}      {v:.6f}                 {ref:.6f}     {v/ref:.3f}")
-    rat = [v/ref for (_L2, v, ref) in rows]
-    check("(6.14)  the architecture floor is Theta(log L / L)   [numerical]",
-          max(rat)/min(rat) < 1.6 and min(rat) > 0.5,
-          "ratios " + ", ".join(f"{x:.3f}" for x in rat))
+    # (6.14) Proposition 6.8 is restricted to the construction of Theorem 6.1.
+    # Its arithmetic core: y = O(1/r) together with m y^r >= 1 forces
+    # r log r <= (1+o(1)) log m.  Taking y = c/r and logs:
+    _c = sp.Symbol("c", positive=True)
+    lhs = sp.simplify(sp.log(_rr/_c)*_rr)          # from (c/r)^r >= 1/m
+    check("(6.14)  (c/r)^r >= 1/m  is  r log(r/c) <= log m   [exact, sympy]",
+          sp.simplify(lhs - (_rr*sp.log(_rr) - _rr*sp.log(_c))) == 0,
+          f"r log(r/c) = {sp.simplify(lhs)}")
+    # and r log r <= L pins r at (1+o(1)) L / log L
+    def rmax(L):
+        r = 2
+        while (r + 1)*math.log(r + 1) <= L:
+            r += 1
+        return r
+    rows = [(L, rmax(L)) for L in (1e3, 1e5, 1e7)]
+    note("      L         r_max     r_max log r_max / L     r_max log L / L")
+    for L, r_ in rows:
+        note(f"  {L:9.0f}   {r_:8d}        {r_*math.log(r_)/L:.4f}"
+             f"                {r_*math.log(L)/L:.4f}")
+    tight = [r_*math.log(r_)/L for (L, r_) in rows]
+    check("(6.14)  r_max log r_max / log m -> 1, so r_max = (1+o(1))L/log L"
+          "   [numerical]",
+          all(0.97 < t <= 1.0 for t in tight),
+          "ratios " + ", ".join(f"{t:.4f}" for t in tight))
 
     say("\n14. Theorem 6.1   the equal-area hidden-tile construction")
     # ---- proof-grade: the closed-form ingredients of the new Section 6 ----

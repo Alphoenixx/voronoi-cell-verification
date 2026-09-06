@@ -40,7 +40,7 @@ group.
 | Remark 4.8 | the fundamental-domain identity, in exact rationals |
 | Lemma 5.4 | the one-hit and two-hit areas, in closed form |
 | Thm 5.6 | the two-cone expansion `1 − 2(1−a)^s + (1−2a)^s = s(s−1)a² + O(s³a³)` behind the universal reliability barrier — including that the linear term vanishes, which is why a single hit is not enough |
-| Section 6 | the area-transfer counting step of Lemma 6.7 and the stationary point of `y + e^{−L}y^{−r}` behind the architecture bound of Prop 6.8; `∫₀^{2π} g = 1` and `1/8 ≤ g ≤ 1/4` for the polar area density `g(θ) = 1/(8max(cos²θ, sin²θ))` of the tile, in `sympy`; the exact `8/r` and `16/r` neighbour separations; the satellite containment in `(1+2/r)Q` for `r ≥ 4`; and the polynomial identity `r(r−8)² − (r−20)(r+2)² = 140r + 80`, which gives the gap `r(1−8/r)²/(1+2/r)² ≥ r − 20` for every `r > 0` |
+| Section 6 | the area-transfer counting step of Lemma 6.7 and the arithmetic `r log r ≤ (1+o(1)) log m` behind the architecture bound of Prop 6.8; `∫₀^{2π} g = 1` and `1/8 ≤ g ≤ 1/4` for the polar area density `g(θ) = 1/(8max(cos²θ, sin²θ))` of the tile, in `sympy`; the exact `8/r` and `16/r` neighbour separations; the satellite containment in `(1+2/r)Q` for `r ≥ 4`; and the polynomial identity `r(r−8)² − (r−20)(r+2)² = 140r + 80`, which gives the gap `r(1−8/r)²/(1+2/r)² ≥ r − 20` for every `r > 0` |
 
 **Consistency tests.** Monte Carlo or simulation. These are evidence, not proof,
 and are labelled as such in the output.
