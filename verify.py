@@ -23,7 +23,6 @@ arithmetic.  No floating-point value is load-bearing.
                    the cyclic ORDER of the vertices (sign tests on Fractions,
                    not atan2), and the shoelace area, all in exact rationals
   Remark 4.8       the fundamental-domain identity, in exact rationals
-  Lemma 5.4        the one-hit and two-hit areas, in closed form
   Thm 5.6          the two-cone expansion 1-2(1-a)^s+(1-2a)^s = s(s-1)a^2 +
                    O(s^3a^3) behind the universal reliability barrier
   Section 6        the area-transfer counting step, and the arithmetic
@@ -36,6 +35,11 @@ arithmetic.  No floating-point value is load-bearing.
 CONSISTENCY TESTS.  Monte Carlo or simulation.  These are evidence, not proof.
 
   Lemma 4.1        concavity of f^(1/2) on random segments
+  Lemma 5.4        the surviving one-hit and two-hit fractions.  The lemma
+                   itself is proved in the paper by a symmetry argument (the
+                   halfplane retains the centre of B), needing no segment area;
+                   these floating-point segment and slab fractions only
+                   illustrate it
   Lemmas 2.1/2.2   the flower inequality, and that a Voronoi flower is empty
   Remark 4.10      the two numerical constants
   Lemma 5.1        the scaling of E[Y]
@@ -645,7 +649,16 @@ def main():
               min(rows) > 0 and max(rows)/min(rows) < 3.0,
               "ratios " + ", ".join(f"{r:.3f}" for r in rows))
 
-    say("\n9. Lemma 5.4   one hit vs two   [closed form, floating point]")
+    say("\n9. Lemma 5.4   one hit vs two   [illustration, not proof]")
+    # The lemma's proof is a symmetry argument; the exact extremal case is the
+    # bisector through the centre, which leaves exactly half.  Certify that.
+    _h = sp.Symbol("h", nonnegative=True)
+    _R = sp.Symbol("R", positive=True)
+    seg = (_R**2*sp.acos(_h/_R) - _h*sp.sqrt(_R**2 - _h**2))/(sp.pi*_R**2)
+    check("Lemma 5.4  a bisector through the centre leaves exactly 1/2"
+          "   [exact, sympy]",
+          sp.simplify(1 - seg.subs(_h, 0) - sp.Rational(1, 2)) == 0,
+          "the extremal case; any other bisector leaves more"),
     R0 = 0.25
     def frac_one(h):
         if h >= R0:
