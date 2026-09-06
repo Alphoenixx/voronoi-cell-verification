@@ -784,7 +784,17 @@ def main():
           sp.simplify(sp.solve(sp.Eq(1 - 1/_rr, sp.Symbol("N", positive=True)/_rr),
                                sp.Symbol("N", positive=True))[0] - (_rr - 1)) == 0,
           "the bound is tight as an identity")
-    # (6.14) Proposition 6.8 is restricted to the construction of Theorem 6.1.
+    # (6.14) Proposition 6.8's averaging step: an algorithm taking a uniformly
+    # random ARRIVAL gets 1/N_0 in expectation, since the cells partition a
+    # unit-area torus, while A <= 1/m because V(z_J) is inside C_J.  No lower
+    # bound on any individual cell is needed.
+    _m = sp.Symbol("m", positive=True)
+    gap = sp.simplify(_m*(1 + _rr) - (_m + (_m - 1)*_rr))
+    check("(6.14)  m/(m+(m-1)r) >= 1/(1+r), i.e. the random-arrival payoff"
+          "   [exact, sympy]",
+          sp.simplify(gap - _rr) == 0,
+          f"m(1+r) - N_0 = {gap} >= 0, so the provable ratio is at most 1+r")
+    # Proposition 6.8 is restricted to the construction of Theorem 6.1.
     # Its arithmetic core: y = O(1/r) together with m y^r >= 1 forces
     # r log r <= (1+o(1)) log m.  Taking y = c/r and logs:
     _c = sp.Symbol("c", positive=True)

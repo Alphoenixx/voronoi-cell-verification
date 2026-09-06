@@ -23,7 +23,7 @@ Roughly 3 minutes. The script uses half the logical cores; override with
 `VERIFY_PROCS=n`. Output is flushed line by line, so it can be watched as it
 runs. Exit status is non-zero if any check fails.
 
-Current run: **63 checks, 0 failures**, about 2½ minutes on 8 processes.
+Current run: **64 checks, 0 failures**, about 2½ minutes on 8 processes.
 
 ## What is proved, and what is only tested
 
