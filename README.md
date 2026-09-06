@@ -19,11 +19,11 @@ pip install sympy mpmath numpy scipy
 python -u verify.py
 ```
 
-Roughly 2 minutes. The script uses half the logical cores; override with
+Roughly 3 minutes. The script uses half the logical cores; override with
 `VERIFY_PROCS=n`. Output is flushed line by line, so it can be watched as it
 runs. Exit status is non-zero if any check fails.
 
-Current run: **56 checks, 0 failures**, 115–125 s on 8 processes.
+Current run: **62 checks, 0 failures**, about 3 minutes on 8 processes.
 
 ## What is proved, and what is only tested
 
@@ -39,7 +39,7 @@ group.
 | Prop 4.9 | both `f(q)` and `∇f(q)` enclosed in verified interval arithmetic at all 64 probes, so the supporting halfplane is valid for the *true* gradient; outward rounding to rationals; polygon intersection and area in exact rationals |
 | Remark 4.8 | the fundamental-domain identity, in exact rationals |
 | Lemma 5.4 | the one-hit and two-hit areas, in closed form |
-| Section 6 | the derivative identity behind `(r/4)tan(π/r) ≤ 1` and its equality case `r = 4`, exactly in `sympy`; the cell-containment radius and the fence and satellite area bounds, exactly |
+| Section 6 | the derivative identity behind `(r/4)tan(π/r) ≤ 1` and its equality case `r = 4`, exactly in `sympy`; the cell-containment radius and the fence and satellite area bounds; and the constant chain `(γ, r₀) = (1/32, 32)` of Thm 6.1, including why `r₀ > 4` is forced |
 
 **Consistency tests.** Monte Carlo or simulation. These are evidence, not proof,
 and are labelled as such in the output.
@@ -48,7 +48,7 @@ and are labelled as such in the output.
 - Lemmas 2.1 / 2.2 — the flower inequality, and that a Voronoi flower is empty
 - Remark 4.10 — the two numerical constants
 - Lemma 5.1 — the scaling of `E[Y]`
-- Thm 6.1 — the gadget is built and its cell areas measured against (6.3)–(6.6)
+- Thm 6.1 — the gadget is built and its cell areas measured against (6.3)–(6.6), at `r = 6` and again at the smallest admissible `r = r₀ = 32`
 - Prop 2.5 / Thm 3.2 — simulated torus point sets
 
 On that last row: `2^d n A / log n → 1` carries a correction of order

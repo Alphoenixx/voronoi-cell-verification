@@ -25,7 +25,9 @@ arithmetic.  No floating-point value is load-bearing.
   Lemma 5.4        the one-hit and two-hit areas, in closed form
   Section 6        the derivative identity behind (r/4)tan(pi/r) <= 1, and its
                    equality case r = 4, exactly in sympy; the cell-containment
-                   radius and the fence/satellite area bounds, exactly
+                   radius and the fence/satellite area bounds, exactly; and the
+                   constant chain (gamma, r_0) = (1/32, 32) of Thm 6.1, including
+                   why r_0 > 4 is forced
 
 CONSISTENCY TESTS.  Monte Carlo or simulation.  These are evidence, not proof.
 
@@ -717,6 +719,23 @@ def main():
           2*_rho <= math.sqrt(2), f"1.04 <= {math.sqrt(2):.6f}")
     check("satellite ball 0.52 l + eps l <= l for eps < 1/10   [exact]",
           _rho + 0.1 <= 1.0, f"{_rho+0.1:.4f} <= 1")
+    # Theorem 6.1 needs c = gamma*r >= 1, since A is the LARGEST cell and no
+    # site is c-competitive for c < 1.  With gamma <= a_0/2pi forced by
+    # r >= 2 pi c / a_0, that means r >= r_0 >= 1/gamma -- the hypothesis
+    # r >= 4 was too weak.  Certify the admissible pair (gamma, r_0)=(1/32, 32).
+    a0_ = float((4*sp.sqrt(2) - 5)/3)
+    gam, r0 = sp.Rational(1, 32), 32
+    c_ = float(gam)*r0
+    check("Thm 6.1  gamma <= a_0/2pi  (forced by r >= 2 pi c / a_0)",
+          float(gam) <= a0_/(2*math.pi),
+          f"1/32 = {float(gam):.6f} <= {a0_/(2*math.pi):.6f}")
+    check("Thm 6.1  c = gamma*r_0 >= 1  at r_0 = 32   [the repaired hypothesis]",
+          c_ >= 1.0, f"c = {c_:.4f}")
+    check("Thm 6.1  r_0 >= 2 pi c / a_0", r0 >= 2*math.pi*c_/a0_,
+          f"32 >= {2*math.pi*c_/a0_:.4f}")
+    check("Thm 6.1  r = 4 would give c < 1, so r_0 > 4 is necessary",
+          float(gam)*4 < 1.0 and a0_/(2*math.pi)*4 < 1.0,
+          f"best possible c at r=4 is {a0_/(2*math.pi)*4:.4f} < 1")
     ar_, ell, r, eps, M = gadget_areas()
     a0 = (4*math.sqrt(2)-5)/3
     AJ = max(ar_["J"])
@@ -734,6 +753,17 @@ def main():
     oth = max(mc, ms, mfen)
     check("z_J is the unique competitive site", AJ/oth > 3.0,
           f"area ratio {AJ/oth:.2f}")
+    # Rebuild at a parameter point where the theorem actually applies:
+    # r = r_0 = 32, c = 1, eps = 0.09 < 1/10, M = 13 >= max(4, 2 sqrt2 c/a_0).
+    Mr = max(4, math.ceil(2*math.sqrt(2)*c_/a0_))
+    a2, ell2, r2, eps2, M2 = gadget_areas(s_side=5, r=r0, eps=0.09, M=Mr)
+    AJ2 = max(a2["J"])
+    o2 = max(max(a2["centre"]), max(a2["sat"]), max(a2["fence"]))
+    check(f"gadget rebuilt at r = r_0 = {r0}, M = {Mr}: (6.3) still holds",
+          AJ2 >= a0_*ell2*ell2 - 1e-12, f"{AJ2/ell2**2:.4f} l^2 vs a_0 = {a0_:.4f}")
+    check(f"at r = r_0 every other cell is below A/c, c = {c_:.2f}",
+          o2 < AJ2/c_, f"largest competitor {o2/ell2**2:.5f} l^2 "
+          f"vs A/c = {AJ2/c_/ell2**2:.5f} l^2")
 
     say("\n14. Prop 2.5 / Thm 3.2   torus simulation   [consistency, not proof]")
     note("a_n = 4 log log n exceeds log n until n ~ 5504, so w_n > 0 and hence")
