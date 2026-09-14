@@ -1,29 +1,34 @@
 # Machine verification for *Asymptotically Optimal Online Selection of a Large Voronoi Cell*
 
-`verify.py` is the script accompanying the manuscript
+This repository accompanies
 
 > A. Sadhu, *Asymptotically Optimal Online Selection of a Large Voronoi Cell*,
 
 which extends S. Har-Peled, *The Prophet and the Voronoi Diagram*, ESA 2026,
 LIPIcs vol. 388, Article 41, [`doi:10.4230/LIPIcs.ESA.2026.41`](https://doi.org/10.4230/LIPIcs.ESA.2026.41).
 
-It re-derives every computational claim in the paper from scratch, and is written
-so that a referee can see at a glance which claims it **proves** and which it
-merely **tests**. That distinction is enforced in the output labels, not just in
-this file.
+`verify.py` is the computational core. `verify_submission.py` is the recommended
+submission-facing runner: it executes the same core without changing any
+mathematical computation and translates legacy draft labels in the printed
+output to the numbering of the final manuscript. `MANUSCRIPT_NUMBERING.md`
+records the complete label map.
 
 ## Running it
 
 ```bash
 pip install sympy mpmath numpy scipy
-python -u verify.py
+python -u verify_submission.py
 ```
 
-Roughly 3 minutes. The script uses half the logical cores; override with
-`VERIFY_PROCS=n`. Output is flushed line by line, so it can be watched as it
-runs. Exit status is non-zero if any check fails.
+Running `python -u verify.py --no-pause` performs the identical checks but may
+print result numbers from the earlier draft.
 
-Current run: **65 checks, 0 failures**, about 2½ minutes on 8 processes.
+The suite takes roughly 3 minutes on a typical multicore machine. It uses half
+the logical cores by default; override this with `VERIFY_PROCS=n`. Output is
+flushed line by line, and the exit status is non-zero if any check fails.
+
+Current reference run: **65 checks, 0 failures**, about 2½ minutes on 8
+processes.
 
 ## What is proved, and what is only tested
 
@@ -52,12 +57,12 @@ and are labelled as such in the output.
 - Thm. 7.4 — the equal-area hidden-tile construction is built independently at `r = 21, 41, 81` and its `r − O(1)` area gap measured; the measured deficits are `4.79, 5.24, 5.47`, bounded and well inside the proved constant `20`
 - Prop. 3.5 / Thm. 4.2 — simulated torus point sets
 
-On that last row: `2^d n A / log n → 1` carries a correction of order
-`log log n / log n`, so at any simulable `n` the measured value is near 2, not
-near 1. The script prints the ratio
-`(2^d n A/log n − 1) / (log log n/log n)`, which is ≈ 4 and near-constant across
-`n = 8000, 20000, 40000`. It is checked for magnitude and trend, never for
-equality.
+On that last row, `2^d n A / log n → 1` carries a correction of order
+`log log n / log n`, so at simulable values of `n` the measured value is near 2,
+not near 1. The script prints
+`(2^d n A/log n − 1) / (log log n/log n)`, which is approximately 4 and
+near-constant across `n = 8000, 20000, 40000`. This is checked for magnitude and
+trend, never for equality.
 
 **Not machine-checked.** The probabilistic arguments themselves: the conditioning
 in the lower bound of Theorem 6.5, the generalized isolation tradeoff of
