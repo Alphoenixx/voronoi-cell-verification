@@ -5,55 +5,45 @@ Machine verification for
     "Asymptotically Optimal Online Selection of a Large Voronoi Cell", A. Sadhu.
 
 Requires : sympy, mpmath, numpy, scipy
-Run      : python -u verify.py        (output is flushed line by line)
+Run      : python -u verify.py --no-pause
 Threads  : half the logical cores; override with VERIFY_PROCS=n.
 
 ------------------------------------------------------------------------------
 WHAT IS PROVED HERE, AND WHAT IS ONLY TESTED
 ------------------------------------------------------------------------------
-PROOF-GRADE.  Exact rational/algebraic arithmetic, or verified mpmath interval
-arithmetic.  No floating-point value is load-bearing.
+PROOF-GRADE. Exact rational/algebraic arithmetic, or verified mpmath interval
+arithmetic. No floating-point approximation is used in a proof-critical
+comparison.
 
-  Lemma 4.4        the closed form for f, cross-checked against the raw
-                   definition of D_p by ray shooting
-  Thm 4.5/4.6/4.7  all eleven inequalities, decided exactly in sympy
-  Cor 4.3          f(1/2,1/2) = 4 sqrt2/3 - 5/3, exactly
-  Prop 4.9         f(q) < alpha AND grad f(q) at all 64 probes, in verified
-                   interval arithmetic; outward rounding; polygon intersection,
-                   the cyclic ORDER of the vertices (sign tests on Fractions,
-                   not atan2), and the shoelace area, all in exact rationals
-  Remark 4.8       the fundamental-domain identity, in exact rationals
-  Thm 5.6          the two-cone expansion 1-2(1-a)^s+(1-2a)^s = s(s-1)a^2 +
-                   O(s^3a^3) behind the universal reliability barrier
-  Section 6        the area-transfer counting step, and the arithmetic
-                   r log r <= (1+o(1)) log m behind the architecture bound;
-                   int g = 1 and 1/8 <= g <= 1/4 for the polar density of Q;
-                   the exact 8/r and 16/r neighbour separations; the satellite
-                   containment in (1+2/r)Q; and the polynomial identity giving
-                   r(1-8/r)^2/(1+2/r)^2 >= r - 20
+  Thms 5.5/5.6/5.7  all eleven square-cell inequalities, exactly in sympy
+  Cor 5.3            f(1/2,1/2) = 4 sqrt(2)/3 - 5/3, exactly
+  Prop 5.9           f(q) and grad f(q) enclosed at all 64 probes; outward
+                     rational rounding; exact polygon intersection/order/area
+  Remark 5.8          the fundamental-domain area identity, exactly
+  Lemma 6.4           the extremal one-hit half-ball case, exactly
+  Thm 6.6             the two-cone expansion in (6.5), exactly
+  Lemma 7.10          the area-transfer counting step in (7.13), exactly
+  Prop 7.11           the arithmetic behind the architecture bound in (7.14)
+  Section 7           polar-density normalization, neighbour separations,
+                      satellite containment, and the exact gap polynomial
 
-CONSISTENCY TESTS.  Monte Carlo or simulation.  These are evidence, not proof.
+CONSISTENCY TESTS. Numerical ray shooting, Monte Carlo, or simulation. These are
+evidence/cross-checks, not proofs.
 
-  Lemma 4.1        concavity of f^(1/2) on random segments
-  Lemma 5.4        the surviving one-hit and two-hit fractions.  The lemma
-                   itself is proved in the paper by a symmetry argument (the
-                   halfplane retains the centre of B), needing no segment area;
-                   these floating-point segment and slab fractions only
-                   illustrate it
-  Lemmas 2.1/2.2   the flower inequality, and that a Voronoi flower is empty
-  Remark 4.10      the two numerical constants
-  Lemma 5.1        the scaling of E[Y]
-  Thm 6.4          the equal-area gadget is built for several r and its
-                   r-O(1) area gap is measured numerically (the closed-form
-                   ingredients of Section 6 are proof-grade; see above)
-  Prop 2.5/Thm 3.2 simulated torus point sets: 2^d n A/log n and vol(Z_n)/A.
-                   These converge like 1 + O(log log n/log n), so at feasible n
-                   they are checked for magnitude and trend, NOT for equality.
+  Lemma 5.4           closed form for f cross-checked against the raw definition
+                      of D_p by numerical ray shooting
+  Lemma 5.1           concavity of f^(1/2) on random segments
+  Lemmas 3.1/3.2      flower inequality and empty-flower property
+  Remark 5.10         the two numerical constants
+  Lemma 6.1           the scaling of E[Y]
+  Lemma 6.4           illustrative segment/slab fractions beyond the exact case
+  Thm 7.4             equal-area gadget built at r=21,41,81 and measured
+  Prop 3.5/Thm 4.2    simulated torus point sets
 
-NOT MACHINE-CHECKED.  The probabilistic arguments themselves: the conditioning
-in the lower bound of Theorem 5.5, the generalized isolation tradeoff of
-Theorem 3.2, and the geometric/posterior proof of the equal-area hidden-tile
-Theorem 6.4.  Those are hand proofs.  "ALL CHECKS PASSED" does not cover them.
+NOT MACHINE-CHECKED. The probabilistic arguments themselves: the conditioning
+in the lower bound of Theorem 6.5, the generalized isolation tradeoff of
+Theorem 4.2, and the geometric/posterior proof of Theorem 7.4. Those are hand
+proofs. "ALL CHECKS PASSED" does not claim otherwise.
 """
 import math
 import os
@@ -218,7 +208,7 @@ Q6 = [(F(31, 200), F(1, 2)), (F(159, 1000), F(9, 20)), (F(171, 1000), F(2, 5)),
       (F(193, 1000), F(7, 20)), (F(9, 40), F(3, 10)), (F(13, 50), F(13, 50))]
 
 
-# ==================== Proposition 4.9, verified intervals ====================
+# ==================== Proposition 5.9, verified intervals ====================
 def iv_f_and_grad(iv, X, Y):
     """verified enclosures of f(q) and grad f(q); None if a branch straddles"""
     bad = []
@@ -376,7 +366,7 @@ def polygon_area(hps):
     cy = sum(p[1] for p in pts)/len(pts)
 
     # Sort the vertices counter-clockwise about (cx,cy) using ONLY sign tests
-    # on Fractions.  An atan2 sort would put a floating-point comparison in
+    # on Fractions. An atan2 sort would put a floating-point comparison in
     # charge of the cyclic order, and the shoelace value depends on that order.
     def _half(p):
         dx, dy = p[0] - cx, p[1] - cy
@@ -403,7 +393,7 @@ def polygon_area(hps):
     return abs(signed(pts))
 
 
-# ==================== torus simulation (Prop 2.5, Thm 3.2) ===================
+# ==================== torus simulation (Prop 3.5, Thm 4.2) ===================
 def w_sim(job):
     n, seed = job
     import numpy as np
@@ -499,7 +489,7 @@ def equal_area_angles(r, grid=250000):
 
 
 def equal_area_gadget_areas(s_side=5, r=21):
-    """Periodic Voronoi areas for the fence-free Section 6 construction."""
+    """Periodic Voronoi areas for the fence-free Section 7 construction."""
     import numpy as np
     from scipy.spatial import Voronoi
     ell = 1.0/s_side
@@ -540,13 +530,13 @@ def main():
     say(f"processes: {NPROC} of {os.cpu_count()} logical cores")
     pool = Pool(NPROC)
 
-    say("\n1. Lemma 4.4   exact formula vs. the raw definition of D_p")
+    say("\n1. Lemma 5.4   exact formula vs. the raw definition of D_p")
     probes = [Q1, (F(1, 2), F(1, 2))] + R5 + Q6
     worst = max(pool.map(w_ab, [_fr(p) for p in probes]))
-    check("formula (4.1) reproduces the raw definition at 13 points",
+    check("formula (5.1) reproduces the raw definition at 13 points",
           worst < 1e-6, f"max |A-B| = {worst:.2e}")
 
-    say("\n2. Theorem 4.5   P[f >= 9/50] >= 9/50   [exact]")
+    say("\n2. Theorem 5.5   P[f >= 9/50] >= 9/50   [exact]")
     v = f_exact(sp.Rational(1, 5), sp.Rational(1, 2))
     check("f(1/5,1/2) = 22*sqrt(5)/25 - 134/75",
           sp.simplify(v - (22*sp.sqrt(5)/25 - sp.Rational(134, 75))) == 0)
@@ -558,7 +548,7 @@ def main():
     check("area conv(G q) = 9/50", ar == F(9, 50), f"{nv}-gon")
     check("9/50 > 1/6  (settles Remark 3.3 of [HP])", F(9, 50) > F(1, 6))
 
-    say("\n3. Theorem 4.6   P[f >= 193/1000] >= 193/1000   [exact]")
+    say("\n3. Theorem 5.6   P[f >= 193/1000] >= 193/1000   [exact]")
     for i, (ok, val) in enumerate(pool.map(
             w_gt, [(_fr(r)[0], _fr(r)[1], (193, 1000)) for r in R5]), 1):
         check(f"f(r{i}) > 193/1000", ok, f"= {val}")
@@ -566,14 +556,14 @@ def main():
     ar, no, nv = hull_area(R5)
     check("area(R) = 193/1000", ar == F(193, 1000), f"{nv}-gon, {no} orbit pts")
 
-    say("\n4. Theorem 4.7   P[f >= 1/6] >= 917/2500   [exact]")
+    say("\n4. Theorem 5.7   P[f >= 1/6] >= 917/2500   [exact]")
     for i, (ok, val) in enumerate(pool.map(
             w_gt, [(_fr(q)[0], _fr(q)[1], (1, 6)) for q in Q6]), 1):
         check(f"f(q{i}) > 1/6", ok, f"= {val}")
     ar, no, nv = hull_area(Q6)
     check("area(Q) = 917/2500", ar == F(917, 2500), f"{nv}-gon, {no} orbit pts")
 
-    say("\n5. Corollary 4.3   the centre maximizes f")
+    say("\n5. Corollary 5.3   the centre maximizes f")
     vc = f_exact(sp.Rational(1, 2), sp.Rational(1, 2))
     check("f(1/2,1/2) = 4*sqrt(2)/3 - 5/3   [exact]",
           sp.simplify(vc - (4*sp.sqrt(2)/3 - sp.Rational(5, 3))) == 0,
@@ -584,7 +574,7 @@ def main():
           all(f_raw(random.random(), random.random(), N=3000) <= fc + 1e-5
               for _ in range(40)))
 
-    say("\n6. Lemma 4.1   concavity of f^(1/2)   [Monte Carlo]")
+    say("\n6. Lemma 5.1   concavity of f^(1/2)   [Monte Carlo]")
     random.seed(7)
     bad = float("inf")
     for _ in range(200):
@@ -598,7 +588,7 @@ def main():
     check("f^(1/2)(p_t) >= chord, 200 random segments", bad > -1e-4,
           f"worst margin {bad:.2e}")
 
-    say("\n7. Remark 4.10   the two numerical constants   [numerical]")
+    say("\n7. Remark 5.10   the two numerical constants   [numerical]")
     def phi_v(a, t):
         a = np.maximum(a, 1e-300)
         r = np.sqrt(np.maximum(0.0, 2*a*t))
@@ -638,7 +628,7 @@ def main():
     note("alpha*      : " + "  ".join(f"{x:.12f}" for x in stars))
     check("alpha* = 0.1933984...", abs(stars[-1]-0.193398415522) < 1e-11)
 
-    say("\n8. Lemma 5.1   E[Y] scaling")
+    say("\n8. Lemma 6.1   E[Y] scaling")
     for d, beta in ((2, 4.0), (2, 8.0), (3, 4.0)):
         psi_d = (1 + 2*math.sqrt(d))**(-d)
         rows = []
@@ -649,13 +639,13 @@ def main():
               min(rows) > 0 and max(rows)/min(rows) < 3.0,
               "ratios " + ", ".join(f"{r:.3f}" for r in rows))
 
-    say("\n9. Lemma 5.4   one hit vs two   [illustration, not proof]")
+    say("\n9. Lemma 6.4   one hit vs two   [illustration, not proof]")
     # The lemma's proof is a symmetry argument; the exact extremal case is the
-    # bisector through the centre, which leaves exactly half.  Certify that.
+    # bisector through the centre, which leaves exactly half. Certify that.
     _h = sp.Symbol("h", nonnegative=True)
     _R = sp.Symbol("R", positive=True)
     seg = (_R**2*sp.acos(_h/_R) - _h*sp.sqrt(_R**2 - _h**2))/(sp.pi*_R**2)
-    check("Lemma 5.4  a bisector through the centre leaves exactly 1/2"
+    check("Lemma 6.4  a bisector through the centre leaves exactly 1/2"
           "   [exact, sympy]",
           sp.simplify(1 - seg.subs(_h, 0) - sp.Rational(1, 2)) == 0,
           "the extremal case; any other bisector leaves more"),
@@ -677,7 +667,7 @@ def main():
           fr[0] > fr[1] > fr[2] and fr[2] < 0.01,
           "fractions " + ", ".join(f"{x:.6f}" for x in fr))
 
-    say("\n10. Proposition 4.9   VERIFIED INTERVAL ARITHMETIC (f and grad f)")
+    say("\n10. Proposition 5.9   VERIFIED INTERVAL ARITHMETIC (f and grad f)")
     for (an, ad), target, label in (((1, 6), F(739, 2000), "1/6"),
                                     ((97, 500), F(473, 2500), "97/500")):
         res = [r for r in pool.map(
@@ -692,7 +682,7 @@ def main():
         check(f"area(S_{label}) <= {target}   [exact rational polygon]",
               area <= target, f"outer bound {float(area):.9f}")
 
-    say("\n11. Remark 4.8   area = 8 x (area in the fundamental triangle)")
+    say("\n11. Remark 5.8   area = 8 x (area in the fundamental triangle)")
     SEC = [(F(1), F(0)), (F(1), F(1, 2)), (F(1, 2), F(1, 2))]
     ccw = lambda p: p if signed(p) > 0 else p[::-1]
     def clip(poly, a, b):
@@ -719,7 +709,7 @@ def main():
         check(f"8 x area({lab} cap T) = {tot}", 8*signed(poly) == tot,
               f"{len(poly)} vertices")
 
-    say("\n12. Lemmas 2.1 and 2.2   flower inequality and empty flower")
+    say("\n12. Lemmas 3.1 and 3.2   flower inequality and empty flower")
     def in_poly(x, y, vs):
         for i in range(len(vs)):
             x1, y1 = vs[i]
@@ -779,40 +769,39 @@ def main():
     check("empty flower: no site in int F(V(p)-p)   [5 x 60 sites]",
           viol == 0, f"{viol} violations")
 
-    say("\n13. Theorem 5.6 and Section 6 obstructions   [closed forms]")
+    say("\n13. Theorem 6.6 and Section 7 obstructions   [closed forms]")
     _a, _s, _L, _rr = sp.symbols("a s L r", positive=True)
-    # (5.5) the two-cone probability, expanded exactly.
+    # (6.5) the two-cone probability, expanded exactly.
     two_cone = 1 - 2*(1 - _a)**_s + (1 - 2*_a)**_s
     coeff2 = sp.simplify(sp.series(two_cone, _a, 0, 3).removeO().coeff(_a, 2))
-    check("(5.5)  1 - 2(1-a)^s + (1-2a)^s has a^2 coefficient s(s-1)"
+    check("(6.5)  1 - 2(1-a)^s + (1-2a)^s has a^2 coefficient s(s-1)"
           "   [exact, sympy]",
           sp.simplify(coeff2 - _s*(_s - 1)) == 0, f"coefficient = {sp.factor(coeff2)}")
-    check("(5.5)  the a^1 coefficient vanishes, so the pair term leads"
+    check("(6.5)  the a^1 coefficient vanishes, so the pair term leads"
           "   [exact, sympy]",
           sp.simplify(sp.series(two_cone, _a, 0, 2).removeO().coeff(_a, 1)) == 0,
           "no linear term: a single hit is not enough")
-    # (6.13) the area-transfer counting step.
-    check("(6.13)  v - v/r <= |Q\\P| v/r  implies  |Q\\P| >= r-1"
+    # (7.13) the area-transfer counting step.
+    check("(7.13)  v - v/r <= |Q\\P| v/r  implies  |Q\\P| >= r-1"
           "   [exact, sympy]",
           sp.simplify(sp.solve(sp.Eq(1 - 1/_rr, sp.Symbol("N", positive=True)/_rr),
                                sp.Symbol("N", positive=True))[0] - (_rr - 1)) == 0,
           "the bound is tight as an identity")
-    # (6.14) Proposition 6.8's averaging step: an algorithm taking a uniformly
-    # random ARRIVAL gets 1/N_0 in expectation, since the cells partition a
-    # unit-area torus, while A <= 1/m because V(z_J) is inside C_J.  No lower
-    # bound on any individual cell is needed.
+    # Proposition 7.11 averaging step: an algorithm taking a uniformly random
+    # arrival gets 1/N_0 in expectation, since the cells partition a unit-area
+    # torus, while A <= 1/m because V(z_J) is inside C_J.
     _m = sp.Symbol("m", positive=True)
     gap = sp.simplify(_m*(1 + _rr) - (_m + (_m - 1)*_rr))
-    check("(6.14)  m/(m+(m-1)r) >= 1/(1+r), i.e. the random-arrival payoff"
+    check("Prop. 7.11  m/(m+(m-1)r) >= 1/(1+r), random-arrival payoff"
           "   [exact, sympy]",
           sp.simplify(gap - _rr) == 0,
           f"m(1+r) - N_0 = {gap} >= 0, so the provable ratio is at most 1+r")
-    # Proposition 6.11 is restricted to the construction of Theorem 6.4.
+    # Proposition 7.11 is restricted to the construction of Theorem 7.4.
     # Its arithmetic core: y = O(1/r) together with m y^r >= 1 forces
-    # r log r <= (1+o(1)) log m.  Taking y = c/r and logs:
+    # r log r <= (1+o(1)) log m. Taking y = c/r and logs:
     _c = sp.Symbol("c", positive=True)
     lhs = sp.simplify(sp.log(_rr/_c)*_rr)          # from (c/r)^r >= 1/m
-    check("(6.14)  (c/r)^r >= 1/m  is  r log(r/c) <= log m   [exact, sympy]",
+    check("(7.14)  (c/r)^r >= 1/m  is  r log(r/c) <= log m   [exact, sympy]",
           sp.simplify(lhs - (_rr*sp.log(_rr) - _rr*sp.log(_c))) == 0,
           f"r log(r/c) = {sp.simplify(lhs)}")
     # and r log r <= L pins r at (1+o(1)) L / log L
@@ -827,21 +816,21 @@ def main():
         note(f"  {L:9.0f}   {r_:8d}        {r_*math.log(r_)/L:.4f}"
              f"                {r_*math.log(L)/L:.4f}")
     tight = [r_*math.log(r_)/L for (L, r_) in rows]
-    check("(6.14)  r_max log r_max / log m -> 1, so r_max = (1+o(1))L/log L"
+    check("(7.14)  r_max log r_max / log m -> 1, so r_max = (1+o(1))L/log L"
           "   [numerical]",
           all(0.97 < t <= 1.0 for t in tight),
           "ratios " + ", ".join(f"{t:.4f}" for t in tight))
 
-    say("\n14. Theorem 6.4   the equal-area hidden-tile construction")
-    # ---- proof-grade: the closed-form ingredients of the new Section 6 ----
+    say("\n14. Theorem 7.4   the equal-area hidden-tile construction")
+    # ---- proof-grade: the closed-form ingredients of Section 7 ----
     _t = sp.Symbol("t", real=True)
     # g is the polar area density of Q = [-1/2,1/2]^2: half the squared boundary
     # radius, rho(theta) = 1/(2 max(|cos|,|sin|)).
     g_sector = 1/(8*sp.cos(_t)**2)                 # valid on (-pi/4, pi/4)
     tot = sp.simplify(8*sp.integrate(g_sector, (_t, 0, sp.pi/4)))
-    check("(6.2)  int_0^{2pi} g = 1, i.e. g is a probability density on Q"
+    check("(7.1)  int_0^{2pi} g = 1, i.e. g is a probability density on Q"
           "   [exact, sympy]", tot == 1, f"8 * int_0^(pi/4) sec^2/8 = {tot}")
-    check("(6.2)  g(0) = 1/8 and g(pi/4) = 1/4, so 1/8 <= g <= 1/4"
+    check("(7.1)  g(0) = 1/8 and g(pi/4) = 1/4, so 1/8 <= g <= 1/4"
           "   [exact, sympy]",
           sp.simplify(g_sector.subs(_t, 0) - sp.Rational(1, 8)) == 0
           and sp.simplify(1/(8*sp.Rational(1, 2)) - sp.Rational(1, 4)) == 0,
@@ -850,29 +839,29 @@ def main():
     _r = sp.Symbol("r", positive=True)
     ax_sep = sp.simplify(1 - 2*((1 - 8/_r)/2))          # axial neighbours
     dg_sep = sp.simplify(2 - 2*2*((1 - 8/_r)/2))        # diagonal neighbours
-    check("(6.6)  axial separation is exactly 8/r   [exact, sympy]",
+    check("(7.5)  axial separation is exactly 8/r   [exact, sympy]",
           sp.simplify(ax_sep - 8/_r) == 0, f"{ax_sep}")
-    check("(6.6)  diagonal separation is exactly 16/r   [exact, sympy]",
+    check("(7.5)  diagonal separation is exactly 16/r   [exact, sympy]",
           sp.simplify(dg_sep - 16/_r) == 0, f"{dg_sep}")
     # The perturbation |2<v-x,h>| + ||h||^2 <= 2(3 sqrt2/2)/r + 1/r^2, and
     # 3 sqrt2 < 6 < 8, so it never eats the 8/r separation.
-    check("(6.6)  perturbation bound 3*sqrt2 <= 6 < 8   [exact, rational]",
+    check("(7.5)  perturbation bound 3*sqrt2 <= 6 < 8   [exact, rational]",
           (3*3)*2 <= 6**2 and 6 < 8, "18 = (3 sqrt2)^2 <= 36")
     # Satellite containment: 1/2 + sqrt2/(2r) + 1/r^2 <= 1/2 + 1/r iff
     # sqrt2/2 + 1/r <= 1, i.e. 1/2 <= (1 - 1/r)^2; true from r = 4 on.
-    check("(6.7)  satellite cell lies in (1+2/r)Q for r >= 4   [exact, rational]",
+    check("(7.6)  satellite cell lies in (1+2/r)Q for r >= 4   [exact, rational]",
           F(1, 2) <= (1 - F(1, 4))**2, f"1/2 <= {(1-F(1,4))**2}")
     # The gap, with the two explicit square factors: the ratio
     # r(1-8/r)^2/(1+2/r)^2 = r(r-8)^2/(r+2)^2 is at least r-20 for every r>0,
     # since the difference is the polynomial 140r + 80.
     gap_poly = sp.expand(_r*(_r - 8)**2 - (_r - 20)*(_r + 2)**2)
-    check("(6.9)  r(1-8/r)^2/(1+2/r)^2 >= r - 20 for all r > 0   [exact, sympy]",
+    check("(7.8)  r(1-8/r)^2/(1+2/r)^2 >= r - 20 for all r > 0   [exact, sympy]",
           sp.simplify(gap_poly - (140*_r + 80)) == 0,
           f"difference is {sp.factor(gap_poly)}, positive for r > 0")
 
     # ---- consistency: build the construction and measure the gap ---------
     note("")
-    note("The remaining Section 6 checks are numerical: the construction is")
+    note("The remaining Section 7 checks are numerical: the construction is")
     note("built independently and its r-O(1) gap measured.  [consistency]")
     ratios = []
     deficits = []
@@ -883,7 +872,7 @@ def main():
         rat = AJ/bad
         ratios.append(rat)
         deficits.append(rr-rat)
-        # The explicit inner-square certificate in (6.6).
+        # The explicit inner-square certificate in (7.5).
         check(f"r={rr}: area(V(z_J)) >= (1-8/r)^2 l^2",
               AJ >= (1-8/rr)**2 * ell**2 - 2e-10,
               f"{AJ/ell**2:.6f} vs {(1-8/rr)**2:.6f}")
@@ -896,23 +885,23 @@ def main():
           "deficits " + ", ".join(f"{x:.3f}" for x in deficits))
     check("measured deficits are below the proved constant 20   [consistency]",
           max(deficits) < 20.0,
-          f"max deficit {max(deficits):.3f} < 20 from (6.9)")
+          f"max deficit {max(deficits):.3f} < 20 from (7.8)")
 
-    say("\n15. Prop 2.5 / Thm 3.2   torus simulation   [consistency, not proof]")
+    say("\n15. Prop 3.5 / Thm 4.2   torus simulation   [consistency, not proof]")
     note("This simulation uses the simple specialization a_n = 4 log log n from the")
-    note("earlier presentation of Theorem 3.2; the updated theorem allows general a_n,s_n.")
+    note("earlier presentation of Theorem 4.2; the updated theorem allows general a_n,s_n.")
     note("Here a_n exceeds log n until n ~ 5504, so w_n > 0 and hence")
     note("r_n is defined only above that; and 4 log log n / log n is still 0.94")
-    note("at n = 16000, so vol(Z_n)/A is far from 1 at any simulable n.  These")
+    note("at n = 16000, so vol(Z_n)/A is far from 1 at any simulable n. These")
     note("are order-of-magnitude and trend checks only.")
     note("")
-    note("EXPECTED SECOND ORDER.  Theorem 3.2 says 2^d n A / log n -> 1, and the")
-    note("correction is only logarithmic.  Matching n cells against the tail of")
+    note("EXPECTED SECOND ORDER. Proposition 3.5 gives 2^d n A / log n -> 1, and the")
+    note("correction is only logarithmic. Matching n cells against the tail of")
     note("the typical cell, P[vol(C) >= v] = p(nv) exp(-2^d n v) with p")
     note("polynomial, gives 2^d n A = log n + Theta(log log n), i.e.")
     note("      2^d n A / log n  =  1 + Theta(log log n / log n).")
     note("At n = 40000 that second term is of order 1, so a measured value near")
-    note("2 is the predicted number, NOT a discrepancy.  The ratio")
+    note("2 is the predicted number, NOT a discrepancy. The ratio")
     note("(2^d n A/log n - 1) / (log log n/log n) is printed below: it should be")
     note("roughly CONSTANT in n, which is the content of the claim.")
     rows = []
