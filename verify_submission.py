@@ -2,7 +2,7 @@
 """Run the verification suite with labels synchronized to the final manuscript.
 
 The numerical and symbolic computations live in verify.py and are not modified
-here.  This runner streams its output while replacing labels from the earlier
+here. This runner streams its output while replacing labels from the earlier
 draft by the corresponding labels in the submission version.
 """
 
@@ -51,7 +51,6 @@ REPLACEMENTS = [
     ("Section 6", "Section 7"),
     ("formula (4.1)", "formula (5.1)"),
     ("(6.13)", "(7.13)"),
-    ("(6.14)", "(7.14)"),
     ("No floating-point value is load-bearing.",
      "No floating-point approximation is used in a proof-critical comparison."),
 ]
